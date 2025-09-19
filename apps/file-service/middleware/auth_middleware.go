@@ -1,6 +1,7 @@
 package middleware
 
 import (
+    "context"
     "net/http"
     "strings"
     "file-service/utils"
@@ -13,12 +14,15 @@ func JWTAuth(next http.Handler) http.Handler {
             http.Error(w, "No Authorization header provided", http.StatusUnauthorized)
             return
         }
-        token := strings.TrimPrefix(authHeader, "Bearer ")
-        _, err := utils.ValidateToken(token)
+        tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+        claims, err := utils.ValidateToken(tokenStr)
         if err != nil {
             http.Error(w, "Invalid token", http.StatusUnauthorized)
             return
         }
-        next.ServeHTTP(w, r)
+
+        // Add username to context for handlers downstream
+        ctx := context.WithValue(r.Context(), "username", claims.Username)
+        next.ServeHTTP(w, r.WithContext(ctx))
     })
 }

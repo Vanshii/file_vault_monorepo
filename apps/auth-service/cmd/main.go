@@ -7,6 +7,9 @@ import (
     "auth-service/database"
     "auth-service/models"
     "auth-service/routes"
+
+	    "github.com/rs/cors"
+
 )
 
 func main() {
@@ -20,6 +23,15 @@ func main() {
     }
 
     r := routes.Init()
+
+	  c := cors.New(cors.Options{
+        AllowedOrigins:   []string{"http://localhost:3000"},
+        AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+        AllowedHeaders:   []string{"Authorization", "Content-Type"},
+        AllowCredentials: true,
+    })
+
+    handler := c.Handler(r)
     log.Println("Server started on :8000")
-    log.Fatal(http.ListenAndServe(":8000", r))
+    log.Fatal(http.ListenAndServe(":8000", handler))
 }
