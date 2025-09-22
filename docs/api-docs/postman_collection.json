@@ -1,0 +1,156 @@
+{
+  "info": {
+    "_postman_id": "file-service-collection",
+    "name": "File Service API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Upload Files",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer <JWT_TOKEN>",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "files",
+              "type": "file",
+              "src": ""
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8001/upload",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["upload"]
+        }
+      }
+    },
+    {
+      "name": "List Files",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer <JWT_TOKEN>",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8001/files",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["files"]
+        }
+      }
+    },
+    {
+      "name": "Download File",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer <JWT_TOKEN>",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8001/files/:id/download",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["files", ":id", "download"]
+        }
+      }
+    },
+    {
+      "name": "Delete File",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer <JWT_TOKEN>",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8001/files/:id",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["files", ":id"]
+        }
+      }
+    },
+    {
+      "name": "Search Files",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer <JWT_TOKEN>",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8001/files/search?filename=test&mime=application/pdf",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["files", "search"],
+          "query": [
+            { "key": "filename", "value": "test" },
+            { "key": "mime", "value": "application/pdf" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Share File Public Link",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer <JWT_TOKEN>",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8001/files/:id/share",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["files", ":id", "share"]
+        }
+      }
+    },
+    {
+      "name": "Download Public File",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8001/public/:link/download",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["public", ":link", "download"]
+        }
+      }
+    }
+  ]
+}
