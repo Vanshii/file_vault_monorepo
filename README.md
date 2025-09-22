@@ -18,6 +18,7 @@ A backend service for managing file uploads, downloads, search, deletion, and pu
 - Go 1.19+ installed
 - PostgreSQL 12+ installed and running
 - `psql` CLI tool to manage database
+- Node.js and npm installed
 - Git (optional)
 
 ### Database Setup
@@ -29,7 +30,6 @@ A backend service for managing file uploads, downloads, search, deletion, and pu
   - `\q`
 - Ensure migration creates tables and indexes (done automatically on app start or manually):
   - Create `files` table:
-
     - `id SERIAL PRIMARY KEY`
     - `filename VARCHAR(255) NOT NULL`
     - `uploader VARCHAR(100) NOT NULL`
@@ -41,7 +41,6 @@ A backend service for managing file uploads, downloads, search, deletion, and pu
     - `download_count INT NOT NULL DEFAULT 0`
     - `public_link VARCHAR(255) UNIQUE`
     - `is_public BOOLEAN DEFAULT FALSE`
-
   - Create indexes:
     - `CREATE INDEX IF NOT EXISTS idx_filename ON files USING gin (filename gin_trgm_ops);`
     - `CREATE INDEX IF NOT EXISTS idx_content_hash ON files(content_hash);`
@@ -58,16 +57,28 @@ A backend service for managing file uploads, downloads, search, deletion, and pu
 
 ### Build and Run
 
-- Clone repository: `git clone https://github.com/your-repo/file-service.git`
-- Change directory: `cd file-service`
-- Install dependencies: `go mod tidy`
-- Build application: `go build ./cmd/main.go`
-- Run application: `./main`
-- Service listens on default port `8001`
+- **Auth Service**
+  - Change directory: `cd auth-service`
+  - Install dependencies: `go mod tidy`
+  - Build application: `go build ./cmd/main.go`
+  - Run application: `./main`
+
+- **File Service**
+  - Change directory: `cd ../file-service`
+  - Install dependencies: `go mod tidy`
+  - Build application: `go build ./cmd/main.go`
+  - Run application: `./main`
+  - Service listens on default port `8001`
+
+- **Frontend (File Vault)**
+  - Change directory: `cd ../file_vault_frontend`
+  - Install dependencies: `npm install`
+  - Run development server: `npm run dev`
 
 ## Usage
 
 - Test the APIs using tools like `curl` or Postman with JWT authentication.
+- Use the frontend to interact with uploaded files, view metadata, and access public links.
 
 ## License
 
