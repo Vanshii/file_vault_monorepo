@@ -1,0 +1,265 @@
+openapi: 3.0.3
+info:
+  title: File Service API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8001/
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    File:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        filename:
+          type: string
+          example: "report.pdf"
+        uploader:
+          type: string
+          example: "testuser"
+        size:
+          type: integer
+          example: 123456
+        mime_type:
+          type: string
+          example: "application/pdf"
+        content_hash:
+          type: string
+          example: "abc123efg456hij789klm"
+        upload_date:
+          type: string
+          format: date-time
+          example: "2025-09-19T18:25:43.511Z"
+        reference_count:
+          type: integer
+          example: 2
+        download_count:
+          type: integer
+          example: 15
+        is_public:
+          type: boolean
+          example: false
+        public_link:
+          type: string
+          nullable: true
+          example: "a1b2c3d4ef"
+
+paths:
+  /upload:
+    post:
+      tags:
+        - Files
+      summary: Upload one or more files
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: List of uploaded files info
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/File'
+        '400':
+          description: Bad request, invalid input
+        '401':
+          description: Unauthorized
+
+  /files:
+    get:
+      tags:
+        - Files
+      summary: List files for authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of files for the authenticated user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/File'
+        '401':
+          description: Unauthorized
+
+  /files/{id}/download:
+    get:
+      tags:
+        - Files
+      summary: Download a file by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Unique ID of the file to download
+      responses:
+        '200':
+          description: File content streamed
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthorized
+        '404':
+          description: File not found
+
+  /files/{id}:
+    delete:
+      tags:
+        - Files
+      summary: Delete a file by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Unique ID of the file to delete
+      responses:
+        '204':
+          description: File deleted successfully (no content)
+        '401':
+          description: Unauthorized
+        '404':
+          description: File not found
+
+  /files/search:
+    get:
+      tags:
+        - Files
+      summary: Search files with filters
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: filename
+          schema:
+            type: string
+          description: Partial match filename filter
+        - in: query
+          name: mime
+          schema:
+            type: string
+          description: MIME type filter (e.g., application/pdf)
+        - in: query
+          name: size_min
+          schema:
+            type: integer
+          description: Minimum file size in bytes
+        - in: query
+          name: size_max
+          schema:
+            type: integer
+          description: Maximum file size in bytes
+        - in: query
+          name: date_start
+          schema:
+            type: string
+            format: date
+          description: Upload start date filter (YYYY-MM-DD)
+        - in: query
+          name: date_end
+          schema:
+            type: string
+            format: date
+          description: Upload end date filter (YYYY-MM-DD)
+      responses:
+        '200':
+          description: List of files matching filters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/File'
+        '401':
+          description: Unauthorized
+
+  /files/{id}/share:
+    post:
+      tags:
+        - Files
+      summary: Generate public share link for a file
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: File ID to generate share link for
+      responses:
+        '200':
+          description: Public share link generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  public_link:
+                    type: string
+                    example: "3E4WXbQ10Q9Viw6nUeOx"
+                  url:
+                    type: string
+                    example: "http://localhost:8001/public/3E4WXbQ10Q9Viw6nUeOx/download"
+        '401':
+          description: Unauthorized
+        '404':
+          description: File not found
+
+  /public/{link}/download:
+    get:
+      tags:
+        - Public Access
+      summary: Download a file using a public share link (no auth)
+      parameters:
+        - in: path
+          name: link
+          required: true
+          schema:
+            type: string
+          description: Public share link ID
+      responses:
+        '200':
+          description: File content streamed publicly
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found or link invalid
