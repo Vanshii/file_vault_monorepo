@@ -11,6 +11,18 @@ A backend service for managing file uploads, downloads, search, deletion, and pu
 - Search files by filename, MIME type, size, and date filters
 - Generate public share links for unauthenticated access
 
+## Architecture
+
+<img width="600" height="600" alt="image" src="https://github.com/user-attachments/assets/2320946a-1243-4cd7-8917-aadc8d8ca404" />
+
+
+- **Frontend (File Vault)**: React + Tailwind application providing user interface for uploading, viewing, downloading, and sharing files.
+- **Auth Service**: Go-based microservice handling user registration, login, JWT authentication, and access control.
+- **File Service**: Go-based backend managing file storage, metadata, deduplication, search, sharing, and download tracking.
+- **Database (PostgreSQL)**: Stores user accounts, file metadata, reference counts, download counts, and public sharing links.
+- **Communication**: Frontend communicates with Auth Service for authentication and File Service for file operations. Services are JWT-secured.
+- **Storage**: Files are stored on the server or cloud storage with SHA-256 content hash to prevent duplication.
+
 ## Setup Instructions
 
 ### Prerequisites
