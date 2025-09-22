@@ -121,28 +121,32 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
             mimeType = fileHeader.Header.Get("Content-Type")
         }
 
-        _, err = database.DB.Exec(
-    `INSERT INTO files (filename, uploader, size, mime_type, content_hash, upload_date, reference_count, download_count, is_public, public_link) 
-     VALUES ($1, $2, $3, $4, $5, $6, 1, 0, FALSE, NULL)`,
+        var insertedID int
+err = database.DB.QueryRow(
+    `INSERT INTO files 
+    (filename, uploader, size, mime_type, content_hash, upload_date, reference_count, download_count, is_public, public_link) 
+     VALUES ($1, $2, $3, $4, $5, $6, 1, 0, FALSE, NULL) RETURNING id`,
     fileHeader.Filename, uploader, fileHeader.Size, mimeType, hash, time.Now(),
-)
-        if err != nil {
-            http.Error(w, "DB error inserting file", http.StatusInternalServerError)
-            return
-        }
+).Scan(&insertedID)
+if err != nil {
+    http.Error(w, "DB error inserting file", http.StatusInternalServerError)
+    return
+}
 
-        uploadedFiles = append(uploadedFiles, models.File{
-            Filename:       fileHeader.Filename,
-            Uploader:       uploader,
-            Size:           fileHeader.Size,
-            MIMEType:       mimeType,
-            ContentHash:    hash,
-            UploadDate:     time.Now(),
-            ReferenceCount: 1,
-            DownloadCount:  0,
-            IsPublic:       false,
-        })
+uploadedFiles = append(uploadedFiles, models.File{
+    ID:             insertedID, // <-- NOW you have the correct ID!
+    Filename:       fileHeader.Filename,
+    Uploader:       uploader,
+    Size:           fileHeader.Size,
+    MIMEType:       mimeType,
+    ContentHash:    hash,
+    UploadDate:     time.Now(),
+    ReferenceCount: 1,
+    DownloadCount:  0,
+    IsPublic:       false,
+})
     }
+
 
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(uploadedFiles)
@@ -371,6 +375,67 @@ func ShareFilePublic(w http.ResponseWriter, r *http.Request) {
         "url":        fmt.Sprintf("http://localhost:8001/public/%s/download", publicLink),
     })
 }
+
+
+
+// AdminListFiles lists all files in the database with uploader and usage stats.
+// Only accessible by users with "admin" role.
+func AdminListFiles(w http.ResponseWriter, r *http.Request) {
+    // Make sure only admins can access
+    role, ok := r.Context().Value("role").(string)
+    if !ok || role != "admin" {
+        http.Error(w, "Forbidden", http.StatusForbidden)
+        return
+    }
+
+    rows, err := database.DB.Query(
+        `SELECT id, filename, uploader, size, mime_type, content_hash, upload_date, reference_count, download_count, is_public, public_link
+         FROM files ORDER BY upload_date DESC`)
+    if err != nil {
+        http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+    defer rows.Close()
+
+    var files []models.File
+    for rows.Next() {
+        var f models.File
+        err := rows.Scan(&f.ID, &f.Filename, &f.Uploader, &f.Size, &f.MIMEType, &f.ContentHash,
+            &f.UploadDate, &f.ReferenceCount, &f.DownloadCount, &f.IsPublic, &f.PublicLink)
+        if err != nil {
+            http.Error(w, "DB error reading file", http.StatusInternalServerError)
+            return
+        }
+        files = append(files, f)
+    }
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(files)
+}
+
+
+func AdminUsageStats(w http.ResponseWriter, r *http.Request) {
+    role, ok := r.Context().Value("role").(string)
+    if !ok || role != "admin" {
+        http.Error(w, "Forbidden", http.StatusForbidden)
+        return
+    }
+    // Example: total files, total downloads, total size
+    var totalFiles, totalDownloads, totalSize int64
+    row := database.DB.QueryRow(`SELECT COUNT(*), COALESCE(SUM(download_count),0), COALESCE(SUM(size),0) FROM files`)
+    err := row.Scan(&totalFiles, &totalDownloads, &totalSize)
+    if err != nil {
+        http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]int64{
+        "total_files":     totalFiles,
+        "total_downloads": totalDownloads,
+        "total_size":      totalSize,
+    })
+}
+
+
 
 // DownloadPublicFile serves a public file by link (no auth required), increments download count
 func DownloadPublicFile(w http.ResponseWriter, r *http.Request) {

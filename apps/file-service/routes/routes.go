@@ -11,7 +11,7 @@ import (
 func Init() *mux.Router {
     r := mux.NewRouter()
 
-    // r.HandleFunc("/upload", controllers.UploadFile).Methods("POST")
+    r.HandleFunc("/upload", controllers.UploadFile).Methods("POST")
     // r.Handle("/files", middleware.JWTAuth(http.HandlerFunc(controllers.ListFiles))).Methods("GET")
 
 
@@ -27,6 +27,12 @@ func Init() *mux.Router {
 
     r.Handle("/files/{id}/share", middleware.JWTAuth(http.HandlerFunc(controllers.ShareFilePublic))).Methods("POST")
 
-    r.HandleFunc("/public/{link}/download", controllers.DownloadPublicFile).Methods("GET") // Public route, no auth
+    r.HandleFunc("/public/{link}/download", controllers.DownloadPublicFile).Methods("GET") // Public route, no auth\
+
+    r.Handle("/admin/files", middleware.JWTAuth(http.HandlerFunc(controllers.AdminListFiles))).Methods("GET")
+r.Handle("/admin/stats", middleware.JWTAuth(http.HandlerFunc(controllers.AdminUsageStats))).Methods("GET")
+
+
+
     return r
 }

@@ -9,6 +9,22 @@ import (
     "auth-service/utils"
 )
 
+// CORS middleware wrapper function
+func WithCORS(handler http.HandlerFunc) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+        w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+        if r.Method == http.MethodOptions {
+            w.WriteHeader(http.StatusNoContent)
+            return
+        }
+
+        handler(w, r)
+    }
+}
+
 type AuthRequest struct {
     Username string `json:"username"`
     Email    string `json:"email"`
@@ -26,6 +42,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Error hashing password", http.StatusInternalServerError)
         return
     }
+
     var userID int
     err = database.DB.QueryRow(
         "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id",
@@ -44,6 +61,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Bad request", http.StatusBadRequest)
         return
     }
+
     row := database.DB.QueryRow("SELECT id, username, password FROM users WHERE username = $1", req.Username)
     var user models.User
     err := row.Scan(&user.ID, &user.Username, &user.Password)
@@ -55,6 +73,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Invalid credentials", http.StatusUnauthorized)
         return
     }
+
     token, err := utils.GenerateJWT(user.Username)
     if err != nil {
         http.Error(w, "Could not generate token", http.StatusInternalServerError)

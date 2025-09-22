@@ -2,15 +2,11 @@ package routes
 
 import (
     "net/http"
-    "github.com/gorilla/mux"
-    "auth-service/controllers"
-    "auth-service/middleware"
+    "auth-service/controllers" // Import by package name, not filename
 )
 
-func Init() *mux.Router {
-    r := mux.NewRouter()
-    r.HandleFunc("/register", controllers.Register).Methods("POST")
-    r.HandleFunc("/login", controllers.Login).Methods("POST")
-    r.Handle("/protected", middleware.JWTAuth(http.HandlerFunc(controllers.Protected))).Methods("GET")
-    return r
+func SetupRoutes() {
+    http.HandleFunc("/register", controllers.WithCORS(controllers.Register))
+    http.HandleFunc("/login", controllers.WithCORS(controllers.Login))
+    http.HandleFunc("/protected", controllers.WithCORS(controllers.Protected))
 }
